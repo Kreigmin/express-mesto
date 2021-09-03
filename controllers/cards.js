@@ -8,7 +8,7 @@ const getAllCards = (req, res) => {
 
 const createCard = (req, res) => {
   const { name, link } = req.body;
-  Card.create({ name, link, owner: res.user._id })
+  Card.create({ name, link, owner: req.user._id })
     .then((card) => res.status(201).send({ data: card }))
     .catch(() => res.status(500).send({ message: "Произошла ошибка" }));
 };
@@ -20,8 +20,40 @@ const deleteCard = (req, res) => {
     .catch(() => res.status(500).send({ message: "Произошла ошибка" }));
 };
 
+const likeCard = (req, res) => {
+  const { cardId } = req.body;
+
+  Card.findByIdAndUpdate(
+    cardId,
+    { $addToSet: { likes: req.user._id } },
+    // eslint-disable-next-line comma-dangle
+    { new: true }
+  )
+    .then((card) => {
+      res.status(200).send(card);
+    })
+    .catch(() => res.status(500).send({ message: "Произошла ошибка" }));
+};
+
+const dislikeCard = (req, res) => {
+  const { cardId } = req.body;
+
+  Card.findByIdAndUpdate(
+    cardId,
+    { $pull: { likes: req.user._id } },
+    // eslint-disable-next-line comma-dangle
+    { new: true }
+  )
+    .then((card) => {
+      res.status(200).send(card);
+    })
+    .catch(() => res.status(500).send({ message: "Произошла ошибка" }));
+};
+
 module.exports = {
   createCard,
   getAllCards,
   deleteCard,
+  likeCard,
+  dislikeCard,
 };

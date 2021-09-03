@@ -12,15 +12,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 // 6130ff6c0c76abb25061e811 - id
 
-app.use(userRoutes);
-
-app.use((res, req, next) => {
+app.use((req, res, next) => {
   req.user = {
     _id: "6130ff6c0c76abb25061e811",
   };
 
   next();
 });
+
+app.use(userRoutes);
 
 app.use(cardRoutes);
 app.listen(PORT);
