@@ -6,7 +6,7 @@ const NOT_FOUND_ERROR_CODE = 404;
 
 const getAllCards = (req, res) => {
   Card.find({})
-    .then((cards) => res.status(200).send({ cards }))
+    .then((cards) => res.status(200).send(cards))
     .catch(() => {
       res
         .status(BASE_ERROR_CODE)
@@ -17,7 +17,7 @@ const getAllCards = (req, res) => {
 const createCard = (req, res) => {
   const { name, link } = req.body;
   Card.create({ name, link, owner: req.user._id })
-    .then((card) => res.status(201).send({ data: card }))
+    .then((card) => res.status(201).send(card))
     .catch((err) => {
       if (err.name === "ValidationError") {
         res
