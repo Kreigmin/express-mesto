@@ -11,9 +11,11 @@ const createUser = (req, res) => {
     .then((user) => res.status(201).send(user))
     .catch((err) => {
       if (err.name === "ValidationError") {
-        req
+        res
           .status(BAD_REQUEST_ERROR_CODE)
-          .send({ message: "Переданы некорректные данные!" });
+          .send({
+            message: "Переданы некорректные данные при создании пользователя.",
+          });
       } else {
         res.status(BASE_ERROR_CODE).send({ message: "Ошибка по умолчанию." });
       }
