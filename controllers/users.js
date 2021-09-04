@@ -11,13 +11,13 @@ const createUser = (req, res) => {
     .then((user) => res.status(201).send(user))
     .catch((err) => {
       if (err.name === "ValidationError") {
-        res
-          .status(BAD_REQUEST_ERROR_CODE)
-          .send({
-            message: "Переданы некорректные данные при создании пользователя.",
-          });
+        res.status(BAD_REQUEST_ERROR_CODE).send({
+          message: "Переданы некорректные данные при создании пользователя.",
+        });
       } else {
-        res.status(BASE_ERROR_CODE).send({ message: "Ошибка по умолчанию." });
+        res
+          .status(BASE_ERROR_CODE)
+          .send({ message: "На сервере произошла ошибка." });
       }
     });
 };
@@ -26,7 +26,9 @@ const getAllUsers = (req, res) => {
   User.find({})
     .then((users) => res.status(200).send(users))
     .catch(() => {
-      res.status(BASE_ERROR_CODE).send({ message: "Ошибка по умолчанию." });
+      res
+        .status(BASE_ERROR_CODE)
+        .send({ message: "На сервере произошла ошибка." });
     });
 };
 
@@ -43,7 +45,7 @@ const getUser = (req, res) => {
     })
     .catch((err) => {
       if (err.status === BASE_ERROR_CODE) {
-        res.status(500).send({ message: "Ошибка по умолчанию." });
+        res.status(500).send({ message: "На сервере произошла ошибка." });
       }
     });
 };
@@ -72,7 +74,9 @@ const updateUserInfo = (req, res) => {
           message: "Переданы некорректные данные при обновлении профиля.",
         });
       } else {
-        res.status(BASE_ERROR_CODE).send({ message: "Ошибка по умолчанию." });
+        res
+          .status(BASE_ERROR_CODE)
+          .send({ message: "На сервере произошла ошибка." });
       }
     });
 };
@@ -103,7 +107,9 @@ const updateAvatar = (req, res) => {
       res.status(200).send(user);
     })
     .catch(() => {
-      res.status(BASE_ERROR_CODE).send({ message: "Ошибка по умолчанию." });
+      res
+        .status(BASE_ERROR_CODE)
+        .send({ message: "На сервере произошла ошибка." });
     });
 };
 

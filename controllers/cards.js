@@ -8,7 +8,9 @@ const getAllCards = (req, res) => {
   Card.find({})
     .then((cards) => res.status(200).send({ cards }))
     .catch(() => {
-      res.status(BASE_ERROR_CODE).send({ message: "Ошибка по умолчанию." });
+      res
+        .status(BASE_ERROR_CODE)
+        .send({ message: "На сервере произошла ошибка." });
     });
 };
 
@@ -22,7 +24,9 @@ const createCard = (req, res) => {
           .status(BAD_REQUEST_ERROR_CODE)
           .send({ message: "Переданы некорректные данные!" });
       } else {
-        res.status(BASE_ERROR_CODE).send({ message: "Ошибка по умолчанию." });
+        res
+          .status(BASE_ERROR_CODE)
+          .send({ message: "На сервере произошла ошибка." });
       }
     });
 };
@@ -40,7 +44,9 @@ const deleteCard = (req, res) => {
       }
     })
     .catch(() => {
-      res.status(BASE_ERROR_CODE).send({ message: "Ошибка по умолчанию." });
+      res
+        .status(BASE_ERROR_CODE)
+        .send({ message: "На сервере произошла ошибка." });
     });
 };
 
@@ -68,7 +74,9 @@ const likeCard = (req, res) => {
           message: "Переданы некорректные данные для постановки лайка.",
         });
       } else {
-        res.status(BASE_ERROR_CODE).send({ message: "Ошибка по умолчанию." });
+        res
+          .status(BASE_ERROR_CODE)
+          .send({ message: "На сервере произошла ошибка." });
       }
     });
 };
@@ -97,7 +105,9 @@ const dislikeCard = (req, res) => {
           message: "Переданы некорректные данные для постановки лайка.",
         });
       } else {
-        res.status(BASE_ERROR_CODE).send({ message: "Ошибка по умолчанию." });
+        res
+          .status(BASE_ERROR_CODE)
+          .send({ message: "На сервере произошла ошибка." });
       }
     });
 };
