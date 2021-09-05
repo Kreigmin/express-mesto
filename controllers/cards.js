@@ -34,17 +34,16 @@ const createCard = (req, res) => {
 const deleteCard = (req, res) => {
   const { cardId } = req.params;
   Card.findByIdAndDelete(cardId)
-    .then((card) => {
-      if (!card) {
+    .orFail(new Error("NotFoundCardId"))
+    .then(() => {
+      res.status(200).send({ message: "Пост удалён" });
+    })
+    .catch((err) => {
+      if (err.message === "NotFoundCardId") {
         res
           .status(NOT_FOUND_ERROR_CODE)
           .send({ message: "Карточка с указанным _id не найдена." });
-      } else {
-        res.status(200).send({ message: "Пост удалён" });
-      }
-    })
-    .catch((err) => {
-      if (err.name === "CastError") {
+      } else if (err.name === "CastError") {
         res.status(BAD_REQUEST_ERROR_CODE).send({
           message: "Переданы некорректные данные для удаления карточки.",
         });
@@ -64,17 +63,16 @@ const likeCard = (req, res) => {
     // eslint-disable-next-line comma-dangle
     { new: true, runValidators: false }
   )
+    .orFail(new Error("NotFoundCardId"))
     .then((card) => {
-      if (!card) {
-        res.status(NOT_FOUND_ERROR_CODE).send({
-          message: "Карточка с указанным _id не найдена.",
-        });
-      } else {
-        res.status(200).send(card);
-      }
+      res.status(200).send(card);
     })
     .catch((err) => {
-      if (err.name === "CastError") {
+      if (err.message === "NotFoundCardId") {
+        res
+          .status(NOT_FOUND_ERROR_CODE)
+          .send({ message: "Карточка с указанным _id не найдена." });
+      } else if (err.name === "CastError") {
         res.status(BAD_REQUEST_ERROR_CODE).send({
           message: "Переданы некорректные данные для постановки лайка.",
         });
@@ -94,17 +92,16 @@ const dislikeCard = (req, res) => {
     // eslint-disable-next-line comma-dangle
     { new: true, runValidators: false }
   )
+    .orFail(new Error("NotFoundCardId"))
     .then((card) => {
-      if (!card) {
-        res.status(NOT_FOUND_ERROR_CODE).send({
-          message: "Карточка с указанным _id не найдена.",
-        });
-      } else {
-        res.status(200).send(card);
-      }
+      res.status(200).send(card);
     })
     .catch((err) => {
-      if (err.name === "CastError") {
+      if (err.message === "NotFoundCardId") {
+        res
+          .status(NOT_FOUND_ERROR_CODE)
+          .send({ message: "Карточка с указанным _id не найдена." });
+      } else if (err.name === "CastError") {
         res.status(BAD_REQUEST_ERROR_CODE).send({
           message: "Переданы некорректные данные для постановки лайка.",
         });

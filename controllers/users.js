@@ -34,17 +34,16 @@ const getAllUsers = (req, res) => {
 
 const getUser = (req, res) => {
   User.findById(req.params.id)
+    .orFail(new Error("NotFoundUserId"))
     .then((user) => {
-      if (!user) {
+      res.status(200).send(user);
+    })
+    .catch((err) => {
+      if (err.message === "NotFoundUserId") {
         res
           .status(NOT_FOUND_ERROR_CODE)
           .send({ message: "Пользователь по указанному _id не найден." });
-      } else {
-        res.status(200).send(user);
-      }
-    })
-    .catch((err) => {
-      if (err.name === "CastError") {
+      } else if (err.name === "CastError") {
         res.status(BAD_REQUEST_ERROR_CODE).send({
           message: "Передан некорректный id пользователя.",
         });
@@ -65,17 +64,16 @@ const updateUserInfo = (req, res) => {
     // eslint-disable-next-line comma-dangle
     { new: true, runValidators: true }
   )
+    .orFail(new Error("NotFoundUserId"))
     .then((user) => {
-      if (!user) {
+      res.status(200).send(user);
+    })
+    .catch((err) => {
+      if (err.message === "NotFoundUserId") {
         res
           .status(NOT_FOUND_ERROR_CODE)
           .send({ message: "Пользователь по указанному _id не найден." });
-      } else {
-        res.status(200).send(user);
-      }
-    })
-    .catch((err) => {
-      if (err.name === "ValidationError") {
+      } else if (err.name === "ValidationError") {
         res.status(BAD_REQUEST_ERROR_CODE).send({
           message: "Переданы некорректные данные при обновлении профиля.",
         });
@@ -108,16 +106,16 @@ const updateAvatar = (req, res) => {
     // eslint-disable-next-line comma-dangle
     { new: true, runValidators: true }
   )
+    .orFail(new Error("NotFoundUserId"))
     .then((user) => {
-      if (!user) {
-        res
-          .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: "Пользователь по указанному _id не найден." });
-      }
       res.status(200).send(user);
     })
     .catch((err) => {
-      if (err.name === "CastError") {
+      if (err.message === "NotFoundUserId") {
+        res
+          .status(NOT_FOUND_ERROR_CODE)
+          .send({ message: "Пользователь по указанному _id не найден." });
+      } else if (err.name === "CastError") {
         res
           .status(BAD_REQUEST_ERROR_CODE)
           .send({ message: "Передан некорректный id пользователя." });
