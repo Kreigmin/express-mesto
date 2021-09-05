@@ -20,9 +20,9 @@ const createCard = (req, res) => {
     .then((card) => res.status(201).send(card))
     .catch((err) => {
       if (err.name === "ValidationError") {
-        res
-          .status(BAD_REQUEST_ERROR_CODE)
-          .send({ message: "Переданы некорректные данные!" });
+        res.status(BAD_REQUEST_ERROR_CODE).send({
+          message: "Переданы некорректные данные для создания карточки.",
+        });
       } else {
         res
           .status(BASE_ERROR_CODE)
@@ -32,7 +32,7 @@ const createCard = (req, res) => {
 };
 
 const deleteCard = (req, res) => {
-  const { cardId } = req.body;
+  const { cardId } = req.params;
   Card.findByIdAndDelete(cardId)
     .then((card) => {
       if (!card) {
@@ -43,26 +43,31 @@ const deleteCard = (req, res) => {
         res.status(200).send({ message: "Пост удалён" });
       }
     })
-    .catch(() => {
-      res
-        .status(BASE_ERROR_CODE)
-        .send({ message: "На сервере произошла ошибка." });
+    .catch((err) => {
+      if (err.name === "CastError") {
+        res.status(BAD_REQUEST_ERROR_CODE).send({
+          message: "Переданы некорректные данные для удаления карточки.",
+        });
+      } else {
+        res
+          .status(BASE_ERROR_CODE)
+          .send({ message: "На сервере произошла ошибка." });
+      }
     });
 };
 
 const likeCard = (req, res) => {
-  const { cardId } = req.body;
-
+  const { cardId } = req.params;
   Card.findByIdAndUpdate(
     cardId,
     { $addToSet: { likes: req.user._id } },
     // eslint-disable-next-line comma-dangle
-    { new: true }
+    { new: true, runValidators: false }
   )
     .then((card) => {
       if (!card) {
-        res.status(BAD_REQUEST_ERROR_CODE).send({
-          message: "Переданы некорректные данные для постановки лайка",
+        res.status(NOT_FOUND_ERROR_CODE).send({
+          message: "Карточка с указанным _id не найдена.",
         });
       } else {
         res.status(200).send(card);
@@ -82,18 +87,17 @@ const likeCard = (req, res) => {
 };
 
 const dislikeCard = (req, res) => {
-  const { cardId } = req.body;
-
+  const { cardId } = req.params;
   Card.findByIdAndUpdate(
     cardId,
     { $pull: { likes: req.user._id } },
     // eslint-disable-next-line comma-dangle
-    { new: true }
+    { new: true, runValidators: false }
   )
     .then((card) => {
       if (!card) {
-        res.status(BAD_REQUEST_ERROR_CODE).send({
-          message: "Переданы некорректные данные для постановки лайка",
+        res.status(NOT_FOUND_ERROR_CODE).send({
+          message: "Карточка с указанным _id не найдена.",
         });
       } else {
         res.status(200).send(card);
