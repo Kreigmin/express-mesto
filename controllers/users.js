@@ -44,8 +44,14 @@ const getUser = (req, res) => {
       }
     })
     .catch((err) => {
-      if (err.status === BASE_ERROR_CODE) {
-        res.status(500).send({ message: "На сервере произошла ошибка." });
+      if (err.name === "CastError") {
+        res.status(BAD_REQUEST_ERROR_CODE).send({
+          message: "Передан некорректный id пользователя.",
+        });
+      } else {
+        res
+          .status(BASE_ERROR_CODE)
+          .send({ message: "На сервере произошла ошибка." });
       }
     });
 };
@@ -73,6 +79,10 @@ const updateUserInfo = (req, res) => {
         res.status(BAD_REQUEST_ERROR_CODE).send({
           message: "Переданы некорректные данные при обновлении профиля.",
         });
+      } else if (err.name === "CastError") {
+        res
+          .status(BAD_REQUEST_ERROR_CODE)
+          .send({ message: "Передан некорректный id пользователя." });
       } else {
         res
           .status(BASE_ERROR_CODE)
@@ -106,10 +116,16 @@ const updateAvatar = (req, res) => {
       }
       res.status(200).send(user);
     })
-    .catch(() => {
-      res
-        .status(BASE_ERROR_CODE)
-        .send({ message: "На сервере произошла ошибка." });
+    .catch((err) => {
+      if (err.name === "CastError") {
+        res
+          .status(BAD_REQUEST_ERROR_CODE)
+          .send({ message: "Передан некорректный id пользователя." });
+      } else {
+        res
+          .status(BASE_ERROR_CODE)
+          .send({ message: "На сервере произошла ошибка." });
+      }
     });
 };
 
