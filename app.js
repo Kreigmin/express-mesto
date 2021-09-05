@@ -23,4 +23,12 @@ app.use((req, res, next) => {
 app.use(userRoutes);
 
 app.use(cardRoutes);
+
+app.use((req, res) => {
+  const NOT_FOUND_ERROR_CODE = 404;
+  res
+    .status(NOT_FOUND_ERROR_CODE)
+    .send({ message: "Запрашиваемый ресурс не найден" });
+});
+
 app.listen(PORT);
