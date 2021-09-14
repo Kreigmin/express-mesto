@@ -1,3 +1,4 @@
+const bcrypt = require("bcryptjs");
 const User = require("../models/user");
 
 const BAD_REQUEST_ERROR_CODE = 400;
@@ -5,9 +6,15 @@ const BASE_ERROR_CODE = 500;
 const NOT_FOUND_ERROR_CODE = 404;
 
 const createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
+  // eslint-disable-next-line object-curly-newline
+  const { name, about, avatar, email, password } = req.body;
 
-  User.create({ name, about, avatar })
+  bcrypt
+    .hash(password, 10)
+    .then((hash) => {
+      // eslint-disable-next-line object-curly-newline
+      User.create({ name, about, avatar, email, hash });
+    })
     .then((user) => res.status(201).send(user))
     .catch((err) => {
       if (err.name === "ValidationError") {
