@@ -1,19 +1,24 @@
+/* eslint-disable consistent-return */
+/* eslint-disable arrow-body-style */
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const User = require("../models/user");
+
+const { JWT_SECRET } = process.env;
 
 const BAD_REQUEST_ERROR_CODE = 400;
 const BASE_ERROR_CODE = 500;
 const NOT_FOUND_ERROR_CODE = 404;
+const UNAUTHORIZED_ERROR_CODE = 401;
 
 const createUser = (req, res) => {
   // eslint-disable-next-line object-curly-newline
   const { name, about, avatar, email, password } = req.body;
-
   bcrypt
     .hash(password, 10)
     .then((hash) => {
       // eslint-disable-next-line object-curly-newline
-      User.create({ name, about, avatar, email, hash });
+      return User.create({ name, about, avatar, email, password: hash });
     })
     .then((user) => res.status(201).send(user))
     .catch((err) => {
@@ -40,7 +45,7 @@ const getAllUsers = (req, res) => {
 };
 
 const getUser = (req, res) => {
-  User.findById(req.params.id)
+  User.findById(req.user._id)
     .orFail(new Error("NotFoundUserId"))
     .then((user) => {
       res.status(200).send(user);
@@ -134,10 +139,38 @@ const updateAvatar = (req, res) => {
     });
 };
 
+const login = (req, res) => {
+  const { email, password } = req.body;
+  return User.findUserbyCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
+        expiresIn: "7d",
+      });
+
+      res.cookie("jwt", token, {
+        maxAge: 3600000 * 24 * 7,
+        httpOnly: true,
+      });
+      res.status(200).send({ message: "Всё хорошо" });
+    })
+    .catch((err) => {
+      if (err.message === "Unauthorized") {
+        res
+          .status(UNAUTHORIZED_ERROR_CODE)
+          .send({ message: "Неправильные почта или пароль" });
+      } else {
+        res
+          .status(BASE_ERROR_CODE)
+          .send({ message: "На сервере произошла ошибка." });
+      }
+    });
+};
+
 module.exports = {
   createUser,
   getAllUsers,
   getUser,
   updateUserInfo,
   updateAvatar,
+  login,
 };
