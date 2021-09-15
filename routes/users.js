@@ -13,7 +13,7 @@ router.post("/users", createUser);
 
 router.get("/users", getAllUsers);
 
-router.get("/users/:id", getUser);
+router.get("/users/me", getUser);
 
 router.patch("/users/me", updateUserInfo);
 
