@@ -34,23 +34,27 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    // required: true,
+    required: true,
     minlength: 6,
+    select: false,
   },
 });
 
+// eslint-disable-next-line func-names
 userSchema.statics.findUserbyCredentials = function (email, password) {
-  return this.findOne({ email }).then((user) => {
-    if (!user) {
-      return Promise.reject(new Error("Unauthorized"));
-    }
-    return bcrypt.compare(password, user.password).then((matched) => {
-      if (!matched) {
+  return this.findOne({ email })
+    .select("+password")
+    .then((user) => {
+      if (!user) {
         return Promise.reject(new Error("Unauthorized"));
       }
-      return user;
+      return bcrypt.compare(password, user.password).then((matched) => {
+        if (!matched) {
+          return Promise.reject(new Error("Unauthorized"));
+        }
+        return user;
+      });
     });
-  });
 };
 
 module.exports = mongoose.model("user", userSchema);
