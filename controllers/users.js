@@ -1,17 +1,16 @@
+/* eslint-disable comma-dangle */
 /* eslint-disable consistent-return */
 /* eslint-disable arrow-body-style */
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
+const BadRequestError = require("../errors/bad-request-error");
+const NotFoundError = require("../errors/not-found-error");
+const UnauthorizedError = require("../errors/unauthorized-error");
 
 const { JWT_SECRET } = process.env;
 
-const BAD_REQUEST_ERROR_CODE = 400;
-const BASE_ERROR_CODE = 500;
-const NOT_FOUND_ERROR_CODE = 404;
-const UNAUTHORIZED_ERROR_CODE = 401;
-
-const createUser = (req, res) => {
+const createUser = (req, res, next) => {
   // eslint-disable-next-line object-curly-newline
   const { name, about, avatar, email, password } = req.body;
   bcrypt
@@ -23,28 +22,23 @@ const createUser = (req, res) => {
     .then((user) => res.status(201).send(user))
     .catch((err) => {
       if (err.name === "ValidationError") {
-        res.status(BAD_REQUEST_ERROR_CODE).send({
-          message: "Переданы некорректные данные при создании пользователя.",
-        });
-      } else {
-        res
-          .status(BASE_ERROR_CODE)
-          .send({ message: "На сервере произошла ошибка." });
+        return next(
+          new BadRequestError(
+            "Переданы некорректные данные при создании пользователя."
+          )
+        );
       }
+      return next(err);
     });
 };
 
-const getAllUsers = (req, res) => {
+const getAllUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.status(200).send(users))
-    .catch(() => {
-      res
-        .status(BASE_ERROR_CODE)
-        .send({ message: "На сервере произошла ошибка." });
-    });
+    .catch(next);
 };
 
-const getUser = (req, res) => {
+const getUser = (req, res, next) => {
   User.findById(req.user._id)
     .orFail(new Error("NotFoundUserId"))
     .then((user) => {
@@ -52,22 +46,16 @@ const getUser = (req, res) => {
     })
     .catch((err) => {
       if (err.message === "NotFoundUserId") {
-        res
-          .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: "Пользователь по указанному _id не найден." });
+        next(new NotFoundError("Пользователь по указанному _id не найден."));
       } else if (err.name === "CastError") {
-        res.status(BAD_REQUEST_ERROR_CODE).send({
-          message: "Передан некорректный id пользователя.",
-        });
+        next(new BadRequestError("Передан некорректный id пользователя."));
       } else {
-        res
-          .status(BASE_ERROR_CODE)
-          .send({ message: "На сервере произошла ошибка." });
+        next(err);
       }
     });
 };
 
-const updateUserInfo = (req, res) => {
+const updateUserInfo = (req, res, next) => {
   const { name, about } = req.body;
 
   User.findByIdAndUpdate(
@@ -82,35 +70,33 @@ const updateUserInfo = (req, res) => {
     })
     .catch((err) => {
       if (err.message === "NotFoundUserId") {
-        res
-          .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: "Пользователь по указанному _id не найден." });
+        next(new NotFoundError("Пользователь по указанному _id не найден."));
       } else if (err.name === "ValidationError") {
-        res.status(BAD_REQUEST_ERROR_CODE).send({
-          message: "Переданы некорректные данные при обновлении профиля.",
-        });
+        next(
+          new BadRequestError(
+            "Переданы некорректные данные при обновлении профиля."
+          )
+        );
       } else if (err.name === "CastError") {
-        res
-          .status(BAD_REQUEST_ERROR_CODE)
-          .send({ message: "Передан некорректный id пользователя." });
+        next(new BadRequestError("Передан некорректный id пользователя."));
       } else {
-        res
-          .status(BASE_ERROR_CODE)
-          .send({ message: "На сервере произошла ошибка." });
+        next(err);
       }
     });
 };
 
-const updateAvatar = (req, res) => {
+const updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
   // eslint-disable-next-line operator-linebreak
   const regExpForUrl =
     // eslint-disable-next-line no-useless-escape
     /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g;
   if (!avatar.match(regExpForUrl)) {
-    res.status(BAD_REQUEST_ERROR_CODE).send({
-      message: "Переданы некорректные данные при обновлении аватара.",
-    });
+    next(
+      new BadRequestError(
+        "Переданы некорректные данные при обновлении аватара."
+      )
+    );
   }
   User.findByIdAndUpdate(
     req.user._id,
@@ -124,22 +110,16 @@ const updateAvatar = (req, res) => {
     })
     .catch((err) => {
       if (err.message === "NotFoundUserId") {
-        res
-          .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: "Пользователь по указанному _id не найден." });
+        next(new NotFoundError("Пользователь по указанному _id не найден."));
       } else if (err.name === "CastError") {
-        res
-          .status(BAD_REQUEST_ERROR_CODE)
-          .send({ message: "Передан некорректный id пользователя." });
+        next(new BadRequestError("Передан некорректный id пользователя."));
       } else {
-        res
-          .status(BASE_ERROR_CODE)
-          .send({ message: "На сервере произошла ошибка." });
+        next(err);
       }
     });
 };
 
-const login = (req, res) => {
+const login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserbyCredentials(email, password)
     .then((user) => {
@@ -151,17 +131,13 @@ const login = (req, res) => {
         maxAge: 3600000 * 24 * 7,
         httpOnly: true,
       });
-      res.status(200).send({ message: "Всё хорошо" });
+      res.status(200).send({ message: "Вы успешно вошли" });
     })
     .catch((err) => {
       if (err.message === "Unauthorized") {
-        res
-          .status(UNAUTHORIZED_ERROR_CODE)
-          .send({ message: "Неправильные почта или пароль" });
+        next(new UnauthorizedError("Неправильные почта или пароль."));
       } else {
-        res
-          .status(BASE_ERROR_CODE)
-          .send({ message: "На сервере произошла ошибка." });
+        return next(err);
       }
     });
 };
