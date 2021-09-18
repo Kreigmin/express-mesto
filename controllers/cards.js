@@ -1,61 +1,70 @@
+/* eslint-disable comma-dangle */
+const mongoose = require("mongoose");
+const BadRequestError = require("../errors/bad-request-error");
+const NotFoundError = require("../errors/not-found-error");
+const ConflictError = require("../errors/conflict-error");
 const Card = require("../models/card");
+// const UnauthorizedError = require("../errors/unauthorized-error");
+const ForbiddenError = require("../errors/forbidden-error");
 
-const BAD_REQUEST_ERROR_CODE = 400;
-const BASE_ERROR_CODE = 500;
-const NOT_FOUND_ERROR_CODE = 404;
+// const { JWT_SECRET } = process.env;
 
-const getAllCards = (req, res) => {
+const getAllCards = (req, res, next) => {
   Card.find({})
     .then((cards) => res.status(200).send(cards))
-    .catch(() => {
-      res
-        .status(BASE_ERROR_CODE)
-        .send({ message: "На сервере произошла ошибка." });
-    });
+    .catch(next);
 };
 
-const createCard = (req, res) => {
+const createCard = (req, res, next) => {
   const { name, link } = req.body;
   Card.create({ name, link, owner: req.user._id })
     .then((card) => res.status(201).send(card))
     .catch((err) => {
       if (err.name === "ValidationError") {
-        res.status(BAD_REQUEST_ERROR_CODE).send({
-          message: "Переданы некорректные данные для создания карточки.",
-        });
+        next(
+          new BadRequestError(
+            "Переданы некорректные данные при создании карточки."
+          )
+        );
+      } else if (err.name === "MongoError" && err.code === 11000) {
+        next(new ConflictError("Данный email уже существует."));
       } else {
-        res
-          .status(BASE_ERROR_CODE)
-          .send({ message: "На сервере произошла ошибка." });
+        next(err);
       }
     });
 };
 
-const deleteCard = (req, res) => {
+const deleteCard = (req, res, next) => {
   const { cardId } = req.params;
-  Card.findByIdAndDelete(cardId)
-    .orFail(new Error("NotFoundCardId"))
-    .then(() => {
-      res.status(200).send({ message: "Пост удалён" });
-    })
-    .catch((err) => {
-      if (err.message === "NotFoundCardId") {
-        res
-          .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: "Карточка с указанным _id не найдена." });
-      } else if (err.name === "CastError") {
-        res.status(BAD_REQUEST_ERROR_CODE).send({
-          message: "Переданы некорректные данные для удаления карточки.",
-        });
-      } else {
-        res
-          .status(BASE_ERROR_CODE)
-          .send({ message: "На сервере произошла ошибка." });
+  const objectCardId = mongoose.Types.ObjectId(cardId);
+  Card.findById(cardId)
+    // eslint-disable-next-line consistent-return
+    .then((card) => {
+      if (req.user._id !== card.owner.toString()) {
+        return next(new ForbiddenError("Нельзя удалять чужую карточку."));
       }
+      Card.deleteOne(objectCardId)
+        .orFail(new Error("NotFoundCardId"))
+        .then(() => {
+          res.status(200).send({ message: "Пост удалён" });
+        })
+        .catch((err) => {
+          if (err.message === "NotFoundCardId") {
+            next(new NotFoundError("Карточка с указанным _id не найдена."));
+          } else if (err.name === "CastError") {
+            next(
+              new BadRequestError(
+                "Переданы некорректные данные для удаления карточки."
+              )
+            );
+          } else {
+            next(err);
+          }
+        });
     });
 };
 
-const likeCard = (req, res) => {
+const likeCard = (req, res, next) => {
   const { cardId } = req.params;
   Card.findByIdAndUpdate(
     cardId,
@@ -69,22 +78,20 @@ const likeCard = (req, res) => {
     })
     .catch((err) => {
       if (err.message === "NotFoundCardId") {
-        res
-          .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: "Карточка с указанным _id не найдена." });
+        next(new NotFoundError("Карточка с указанным _id не найдена."));
       } else if (err.name === "CastError") {
-        res.status(BAD_REQUEST_ERROR_CODE).send({
-          message: "Переданы некорректные данные для постановки лайка.",
-        });
+        next(
+          new BadRequestError(
+            "Переданы некорректные данные для постановки лайка."
+          )
+        );
       } else {
-        res
-          .status(BASE_ERROR_CODE)
-          .send({ message: "На сервере произошла ошибка." });
+        next(err);
       }
     });
 };
 
-const dislikeCard = (req, res) => {
+const dislikeCard = (req, res, next) => {
   const { cardId } = req.params;
   Card.findByIdAndUpdate(
     cardId,
@@ -98,17 +105,15 @@ const dislikeCard = (req, res) => {
     })
     .catch((err) => {
       if (err.message === "NotFoundCardId") {
-        res
-          .status(NOT_FOUND_ERROR_CODE)
-          .send({ message: "Карточка с указанным _id не найдена." });
+        next(new NotFoundError("Карточка с указанным _id не найдена."));
       } else if (err.name === "CastError") {
-        res.status(BAD_REQUEST_ERROR_CODE).send({
-          message: "Переданы некорректные данные для постановки лайка.",
-        });
+        next(
+          new BadRequestError(
+            "Переданы некорректные данные для удаления лайка."
+          )
+        );
       } else {
-        res
-          .status(BASE_ERROR_CODE)
-          .send({ message: "На сервере произошла ошибка." });
+        next(err);
       }
     });
 };
