@@ -2,12 +2,8 @@
 const mongoose = require("mongoose");
 const BadRequestError = require("../errors/bad-request-error");
 const NotFoundError = require("../errors/not-found-error");
-const ConflictError = require("../errors/conflict-error");
 const Card = require("../models/card");
-// const UnauthorizedError = require("../errors/unauthorized-error");
 const ForbiddenError = require("../errors/forbidden-error");
-
-// const { JWT_SECRET } = process.env;
 
 const getAllCards = (req, res, next) => {
   Card.find({})
@@ -21,16 +17,13 @@ const createCard = (req, res, next) => {
     .then((card) => res.status(201).send(card))
     .catch((err) => {
       if (err.name === "ValidationError") {
-        next(
+        return next(
           new BadRequestError(
             "Переданы некорректные данные при создании карточки."
           )
         );
-      } else if (err.name === "MongoError" && err.code === 11000) {
-        next(new ConflictError("Данный email уже существует."));
-      } else {
-        next(err);
       }
+      return next(err);
     });
 };
 
@@ -50,16 +43,17 @@ const deleteCard = (req, res, next) => {
         })
         .catch((err) => {
           if (err.message === "NotFoundCardId") {
-            next(new NotFoundError("Карточка с указанным _id не найдена."));
+            return next(
+              new NotFoundError("Карточка с указанным _id не найдена.")
+            );
           } else if (err.name === "CastError") {
-            next(
+            return next(
               new BadRequestError(
                 "Переданы некорректные данные для удаления карточки."
               )
             );
-          } else {
-            next(err);
           }
+          return next(err);
         });
     });
 };
@@ -78,16 +72,15 @@ const likeCard = (req, res, next) => {
     })
     .catch((err) => {
       if (err.message === "NotFoundCardId") {
-        next(new NotFoundError("Карточка с указанным _id не найдена."));
+        return next(new NotFoundError("Карточка с указанным _id не найдена."));
       } else if (err.name === "CastError") {
-        next(
+        return next(
           new BadRequestError(
             "Переданы некорректные данные для постановки лайка."
           )
         );
-      } else {
-        next(err);
       }
+      return next(err);
     });
 };
 
@@ -105,16 +98,15 @@ const dislikeCard = (req, res, next) => {
     })
     .catch((err) => {
       if (err.message === "NotFoundCardId") {
-        next(new NotFoundError("Карточка с указанным _id не найдена."));
+        return next(new NotFoundError("Карточка с указанным _id не найдена."));
       } else if (err.name === "CastError") {
-        next(
+        return next(
           new BadRequestError(
             "Переданы некорректные данные для удаления лайка."
           )
         );
-      } else {
-        next(err);
       }
+      return next(err);
     });
 };
 
