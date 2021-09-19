@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
 const helmet = require("helmet");
 const { errors } = require("celebrate");
@@ -18,6 +19,7 @@ app.use(helmet());
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 app.post("/signin", login);
 app.post("/signup", createUser);
