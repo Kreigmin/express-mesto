@@ -1,13 +1,11 @@
+/* eslint-disable comma-dangle */
 /* eslint-disable object-shorthand */
 const mongoose = require("mongoose");
 
 const bcrypt = require("bcryptjs");
 const validator = require("validator");
-
-// eslint-disable-next-line operator-linebreak
-const regExpForUrl =
-  // eslint-disable-next-line no-useless-escape
-  /(http(s)?:\/\/.)(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g;
+const NotFoundError = require("../errors/not-found-error");
+const BadRequestError = require("../errors/bad-request-error");
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -25,12 +23,8 @@ const userSchema = new mongoose.Schema({
   avatar: {
     type: String,
     validate: {
-      // eslint-disable-next-line func-names
-      validator: function (value) {
-        if (!regExpForUrl.test(value)) {
-          return new Error("InvalidUrl");
-        }
-        return true;
+      validator(link) {
+        return validator.isURL(link);
       },
     },
     default:
@@ -71,6 +65,27 @@ userSchema.statics.findUserbyCredentials = function (email, password) {
         }
         return user;
       });
+    });
+};
+
+// eslint-disable-next-line func-names
+userSchema.statics.findUser = function (userId, res, next) {
+  return this.findById(userId)
+    .orFail(new Error("NotFoundUserId"))
+    .then((user) => {
+      res.status(200).send(user);
+    })
+    .catch((err) => {
+      if (err.message === "NotFoundUserId") {
+        return next(
+          new NotFoundError("Пользователь по указанному _id не найден.")
+        );
+      } else if (err.name === "CastError") {
+        return next(
+          new BadRequestError("Передан некорректный id пользователя.")
+        );
+      }
+      return next(err);
     });
 };
 
