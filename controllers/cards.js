@@ -31,30 +31,29 @@ const deleteCard = (req, res, next) => {
   const { cardId } = req.params;
   const objectCardId = mongoose.Types.ObjectId(cardId);
   Card.findById(cardId)
+    .orFail(new Error("NotFoundCardId"))
     // eslint-disable-next-line consistent-return
     .then((card) => {
       if (req.user._id !== card.owner.toString()) {
         return next(new ForbiddenError("Нельзя удалять чужую карточку."));
       }
       Card.deleteOne(objectCardId)
-        .orFail(new Error("NotFoundCardId"))
         .then(() => {
           res.status(200).send({ message: "Пост удалён" });
         })
-        .catch((err) => {
-          if (err.message === "NotFoundCardId") {
-            return next(
-              new NotFoundError("Карточка с указанным _id не найдена.")
-            );
-          } else if (err.name === "CastError") {
-            return next(
-              new BadRequestError(
-                "Переданы некорректные данные для удаления карточки."
-              )
-            );
-          }
-          return next(err);
-        });
+        .catch(next);
+    })
+    .catch((err) => {
+      if (err.message === "NotFoundCardId") {
+        return next(new NotFoundError("Карточка с указанным _id не найдена."));
+      } else if (err.name === "CastError") {
+        return next(
+          new BadRequestError(
+            "Переданы некорректные данные для удаления карточки."
+          )
+        );
+      }
+      return next(err);
     });
 };
 
