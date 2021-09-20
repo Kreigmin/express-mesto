@@ -1,3 +1,6 @@
+/* eslint-disable function-paren-newline */
+/* eslint-disable implicit-arrow-linebreak */
+/* eslint-disable object-curly-newline */
 /* eslint-disable comma-dangle */
 /* eslint-disable consistent-return */
 /* eslint-disable arrow-body-style */
@@ -9,18 +12,22 @@ const NotFoundError = require("../errors/not-found-error");
 const UnauthorizedError = require("../errors/unauthorized-error");
 const ConflictError = require("../errors/conflict-error");
 
-const { JWT_SECRET } = process.env;
+const {
+  JWT_SECRET = "0b268613ed8c3f6f16a8280368d7df3e510fe7ae0a8fa32bd7b4f6d9982fdbed",
+} = process.env;
 
 const createUser = (req, res, next) => {
-  // eslint-disable-next-line object-curly-newline
   const { name, about, avatar, email, password } = req.body;
   bcrypt
     .hash(password, 10)
     .then((hash) => {
-      // eslint-disable-next-line object-curly-newline
       return User.create({ name, about, avatar, email, password: hash });
     })
-    .then((user) => res.status(201).send(user))
+    .then((user) => {
+      // eslint-disable-next-line no-shadow
+      const { name, about, avatar, email } = user;
+      res.status(201).send({ user: { name, about, avatar, email } });
+    })
     .catch((err) => {
       if (err.name === "ValidationError") {
         return next(
@@ -42,23 +49,12 @@ const getAllUsers = (req, res, next) => {
 };
 
 const getUser = (req, res, next) => {
-  User.findById(req.user._id)
-    .orFail(new Error("NotFoundUserId"))
-    .then((user) => {
-      res.status(200).send(user);
-    })
-    .catch((err) => {
-      if (err.message === "NotFoundUserId") {
-        return next(
-          new NotFoundError("Пользователь по указанному _id не найден.")
-        );
-      } else if (err.name === "CastError") {
-        return next(
-          new BadRequestError("Передан некорректный id пользователя.")
-        );
-      }
-      return next(err);
-    });
+  User.findUser(req.user._id, res, next);
+};
+
+const getUserById = (req, res, next) => {
+  const { userId } = req.params;
+  User.findUser(userId, res, next);
 };
 
 const updateUserInfo = (req, res, next) => {
@@ -153,4 +149,5 @@ module.exports = {
   updateUserInfo,
   updateAvatar,
   login,
+  getUserById,
 };
