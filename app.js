@@ -1,13 +1,15 @@
+/* eslint-disable comma-dangle */
 const express = require("express");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
-require("dotenv").config();
 const helmet = require("helmet");
-const { errors } = require("celebrate");
+const { errors, Joi, celebrate } = require("celebrate");
+const validator = require("validator");
 const userRoutes = require("./routes/users");
 const cardRoutes = require("./routes/cards");
 const { login, createUser } = require("./controllers/users");
 const auth = require("./middlewares/auth");
+const NotFoundError = require("./errors/not-found-error");
 
 const BASE_ERROR_CODE = 500;
 const { PORT = 3000 } = process.env;
@@ -21,14 +23,45 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 
-app.post("/signin", login);
-app.post("/signup", createUser);
+app.post(
+  "/signin",
+  celebrate({
+    body: Joi.object().keys({
+      email: Joi.string().required().email(),
+      password: Joi.string().required().min(6),
+    }),
+  }),
+  login
+);
+
+app.post(
+  "/signup",
+  celebrate({
+    body: Joi.object().keys({
+      name: Joi.string().min(2).max(30),
+      about: Joi.string().min(2).max(30),
+      avatar: Joi.string().custom((value) => {
+        if (!validator.isURL(value, { require_protocol: true })) {
+          throw new Error("Неправильный формат ссылки");
+        }
+        return value;
+      }),
+      email: Joi.string().required().email(),
+      password: Joi.string().required().min(6),
+    }),
+  }),
+  createUser
+);
 
 app.use(auth);
 
 app.use(userRoutes);
 
 app.use(cardRoutes);
+
+app.use((req, res, next) => {
+  next(new NotFoundError("Запрашиваемый ресурс не найден"));
+});
 
 app.use(errors());
 
@@ -39,13 +72,6 @@ app.use((err, req, res, next) => {
     message:
       statusCode === BASE_ERROR_CODE ? "На сервере произошла ошибка" : message,
   });
-});
-
-app.use((req, res) => {
-  const NOT_FOUND_ERROR_CODE = 404;
-  res
-    .status(NOT_FOUND_ERROR_CODE)
-    .send({ message: "Запрашиваемый ресурс не найден" });
 });
 
 app.listen(PORT);
