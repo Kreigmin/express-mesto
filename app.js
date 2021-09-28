@@ -10,6 +10,7 @@ const cardRoutes = require("./routes/cards");
 const { login, createUser } = require("./controllers/users");
 const auth = require("./middlewares/auth");
 const NotFoundError = require("./errors/not-found-error");
+const { requestLogger, errorLogger } = require("./middlewares/logger");
 
 const BASE_ERROR_CODE = 500;
 const { PORT = 3000 } = process.env;
@@ -22,6 +23,8 @@ app.use(helmet());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
+
+app.use(requestLogger);
 
 app.post(
   "/signin",
@@ -58,6 +61,8 @@ app.use(auth);
 app.use(userRoutes);
 
 app.use(cardRoutes);
+
+app.use(errorLogger);
 
 app.use((req, res, next) => {
   next(new NotFoundError("Запрашиваемый ресурс не найден"));
